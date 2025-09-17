@@ -16,6 +16,7 @@ from src.models import (
 
 # -------- AttentionHead --------
 
+
 @pytest.fixture
 def attention_head():
     torch.manual_seed(0)
@@ -56,6 +57,7 @@ def test_scaled_dot_product_attention_uniform_when_scores_zero(attention_head):
 
 # -------- MultiHeadAttention --------
 
+
 @pytest.fixture
 def multihead_attention():
     torch.manual_seed(0)
@@ -78,6 +80,7 @@ def test_multihead_attention_invalid_heads_raises():
 
 
 # -------- FeedForward --------
+
 
 @pytest.fixture
 def ff():
@@ -102,10 +105,13 @@ def test_feedforward_backward(ff):
 
 # -------- TransformerEncoderLayer --------
 
+
 @pytest.fixture
 def encoder_layer():
     torch.manual_seed(0)
-    return TransformerEncoderLayer(d_model=32, num_attention_heads=4, intermediate_size=64)
+    return TransformerEncoderLayer(
+        d_model=32, num_attention_heads=4, intermediate_size=64
+    )
 
 
 def test_encoder_layer_shape_and_residual(encoder_layer):
@@ -117,6 +123,7 @@ def test_encoder_layer_shape_and_residual(encoder_layer):
 
 
 # -------- Embeddings --------
+
 
 @pytest.fixture
 def embeddings():
@@ -134,6 +141,7 @@ def test_embeddings_shape_and_layer_norm(embeddings):
 
 
 # -------- TransformerEncoder --------
+
 
 @pytest.fixture
 def encoder():
@@ -159,6 +167,7 @@ def test_encoder_output_shape_and_stacking(encoder):
 
 # -------- Classification head --------
 
+
 def test_classification_head_train_vs_eval_dropout():
     torch.manual_seed(0)
     head = ClassificationHead(d_model=32, num_classes=5, dropout_prob=0.5)
@@ -175,6 +184,7 @@ def test_classification_head_train_vs_eval_dropout():
 
 
 # -------- TransformerForSequenceClassification --------
+
 
 def test_transformer_for_sequence_classification_shape_and_backward():
     torch.manual_seed(0)
@@ -197,4 +207,3 @@ def test_transformer_for_sequence_classification_shape_and_backward():
     # verify some encoder param has gradient
     has_grad = any(p.grad is not None for p in model.parameters())
     assert has_grad
-

@@ -76,6 +76,7 @@ class AttentionHead(nn.Module):
 
         return output
 
+
 class MultiHeadAttention(nn.Module):
     """Multi-Head Attention mechanism.
 
@@ -96,8 +97,20 @@ class MultiHeadAttention(nn.Module):
         if d_model % num_attention_heads != 0:
             raise RuntimeError("d_model must be divisible by num_attention_heads")
 
-        self.heads: nn.ModuleList = nn.ModuleList([AttentionHead(d_model, d_model//num_attention_heads, d_model//num_attention_heads, d_model//num_attention_heads) for _ in range(num_attention_heads)])
-        self.output_linear = nn.Linear(num_attention_heads * (d_model // num_attention_heads), d_model)
+        self.heads: nn.ModuleList = nn.ModuleList(
+            [
+                AttentionHead(
+                    d_model,
+                    d_model // num_attention_heads,
+                    d_model // num_attention_heads,
+                    d_model // num_attention_heads,
+                )
+                for _ in range(num_attention_heads)
+            ]
+        )
+        self.output_linear = nn.Linear(
+            num_attention_heads * (d_model // num_attention_heads), d_model
+        )
 
     def forward(self, hidden_state):
         """Forward pass for the multi-head attention layer.
@@ -111,7 +124,8 @@ class MultiHeadAttention(nn.Module):
         head_outputs = [head(hidden_state) for head in self.heads]
         concatenated = torch.cat(head_outputs, dim=-1)
         return self.output_linear(concatenated)
-    
+
+
 class FeedForward(nn.Module):
     """FeedForward module for the Transformer.
 
@@ -147,6 +161,7 @@ class FeedForward(nn.Module):
         x2 = self.gelu(x1)
         x3 = self.linear_2(x2)
         return x3
+
 
 class TransformerEncoderLayer(nn.Module):
     """Transformer Encoder Layer.
@@ -185,11 +200,12 @@ class TransformerEncoderLayer(nn.Module):
         """
         # Apply layer normalization and then apply multi-head attention
         hidden_state = None
-        
+
         # Apply layer normalization and then apply feed-forward network
         x = None
-        
+
         return x
+
 
 class Embeddings(nn.Module):
     """Embeddings module for the Transformer.
@@ -235,7 +251,8 @@ class Embeddings(nn.Module):
         embeddings = None
 
         return embeddings
-    
+
+
 class TransformerEncoder(nn.Module):
     """Transformer Encoder.
 
@@ -255,9 +272,15 @@ class TransformerEncoder(nn.Module):
         layers (nn.ModuleList): List of Transformer encoder layers.
     """
 
-    def __init__(self, vocab_size: int, max_position_embeddings: int, d_model: int,
-                num_attention_heads: int, intermediate_size: int, num_hidden_layers: int
-                 ):
+    def __init__(
+        self,
+        vocab_size: int,
+        max_position_embeddings: int,
+        d_model: int,
+        num_attention_heads: int,
+        intermediate_size: int,
+        num_hidden_layers: int,
+    ):
         super(TransformerEncoder, self).__init__()
         self.embeddings = None
         self.layers = None
@@ -273,7 +296,8 @@ class TransformerEncoder(nn.Module):
         """
         x = None
         return x
-    
+
+
 class ClassificationHead(nn.Module):
     """Classification head for the Transformer model.
 
@@ -306,7 +330,8 @@ class ClassificationHead(nn.Module):
         """
         x = None
         return x
-    
+
+
 class TransformerForSequenceClassification(nn.Module):
     """Transformer model with a classification head on top for sequence classification.
 
@@ -325,9 +350,17 @@ class TransformerForSequenceClassification(nn.Module):
         classifier (ClassificationHead): The classification head on top of the Transformer encoder.
     """
 
-    def __init__(self, vocab_size: int, max_position_embeddings: int, d_model: int,
-                num_attention_heads: int, intermediate_size: int, num_hidden_layers: int,
-                num_classes: int, dropout_prob: float):
+    def __init__(
+        self,
+        vocab_size: int,
+        max_position_embeddings: int,
+        d_model: int,
+        num_attention_heads: int,
+        intermediate_size: int,
+        num_hidden_layers: int,
+        num_classes: int,
+        dropout_prob: float,
+    ):
         super(TransformerForSequenceClassification, self).__init__()
         self.transformer_encoder = None
         self.classifier = None
@@ -346,7 +379,7 @@ class TransformerForSequenceClassification(nn.Module):
 
         # Use the first token's output (e.g., CLS token) for classification
         x = None
-        
+
         # Pass through the classification head
         x = None
         return x

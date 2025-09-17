@@ -29,7 +29,9 @@ class AttentionHead(nn.Module):
         self.wk = nn.Linear(d_model, d_k)
         self.wv = nn.Linear(d_model, d_v)
 
-    def scaled_dot_product_attention(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def scaled_dot_product_attention(
+        self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Calculate the attention weights.
 
         Args:
@@ -50,7 +52,7 @@ class AttentionHead(nn.Module):
         scores: torch.Tensor = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(dim_k)
 
         # Apply the softmax function to obtain the attention weights.
-        weights: torch.Tensor = torch.softmax(scores,dim=-1)
+        weights: torch.Tensor = torch.softmax(scores, dim=-1)
 
         # Compute the output by performing a weighted sum of the value tensor
         # using the attention weights.
@@ -76,6 +78,7 @@ class AttentionHead(nn.Module):
 
         return output
 
+
 class MultiHeadAttention(nn.Module):
     """Multi-Head Attention mechanism.
 
@@ -97,10 +100,12 @@ class MultiHeadAttention(nn.Module):
         self.d_head = d_model // num_attention_heads
         self.d_model = d_model
         self.heads = nn.ModuleList(
-            [AttentionHead(d_model, self.d_head, self.d_head, self.d_head) for _ in range(num_attention_heads)]
+            [
+                AttentionHead(d_model, self.d_head, self.d_head, self.d_head)
+                for _ in range(num_attention_heads)
+            ]
         )
         self.output_linear = nn.Linear(num_attention_heads * self.d_head, d_model)
-
 
     def forward(self, hidden_state):
         """Forward pass for the multi-head attention layer.
@@ -117,7 +122,8 @@ class MultiHeadAttention(nn.Module):
             raise RuntimeError("Dim model must be divisible by num heads")
         concat = torch.cat(head_outputs, dim=-1)  # (b, t, d_model)
         return self.output_linear(concat)
-    
+
+
 class FeedForward(nn.Module):
     """FeedForward module for the Transformer.
 
@@ -153,6 +159,7 @@ class FeedForward(nn.Module):
         x = self.gelu(x)
         x = self.linear_2(x)
         return x
+
 
 class TransformerEncoderLayer(nn.Module):
     """Transformer Encoder Layer.
@@ -191,13 +198,14 @@ class TransformerEncoderLayer(nn.Module):
         """
         # Apply layer normalization and then apply multi-head attention
         hidden_state = self.attention(self.layer_norm_1(x))
-        
+
         # Apply layer normalization and then apply feed-forward network
         x = x + hidden_state
 
         hidden_state = self.feed_forward(self.layer_norm_2(x))
         x = x + hidden_state
         return x
+
 
 class Embeddings(nn.Module):
     """Embeddings module for the Transformer.
@@ -233,7 +241,11 @@ class Embeddings(nn.Module):
         """
         # Generate position IDs based on the input sequence length
         batch_size, seq_length = input_ids.size()
-        position_ids = torch.arange(seq_length, device=input_ids.device).unsqueeze(0).expand(batch_size, -1)
+        position_ids = (
+            torch.arange(seq_length, device=input_ids.device)
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+        )
 
         # Create token and position embeddings
         token_embeddings = self.token_embeddings(input_ids)
@@ -244,7 +256,8 @@ class Embeddings(nn.Module):
         embeddings = self.layer_norm(embeddings)
 
         return embeddings
-    
+
+
 class TransformerEncoder(nn.Module):
     """Transformer Encoder.
 
@@ -264,9 +277,15 @@ class TransformerEncoder(nn.Module):
         layers (nn.ModuleList): List of Transformer encoder layers.
     """
 
-    def __init__(self, vocab_size: int, max_position_embeddings: int, d_model: int,
-                num_attention_heads: int, intermediate_size: int, num_hidden_layers: int
-                 ):
+    def __init__(
+        self,
+        vocab_size: int,
+        max_position_embeddings: int,
+        d_model: int,
+        num_attention_heads: int,
+        intermediate_size: int,
+        num_hidden_layers: int,
+    ):
         super(TransformerEncoder, self).__init__()
         self.embeddings = Embeddings(vocab_size, max_position_embeddings, d_model)
         self.layers = nn.ModuleList(
@@ -289,7 +308,8 @@ class TransformerEncoder(nn.Module):
         for layer in self.layers:
             x = layer(x)
         return x
-    
+
+
 class ClassificationHead(nn.Module):
     """Classification head for the Transformer model.
 
@@ -323,7 +343,8 @@ class ClassificationHead(nn.Module):
         x = self.dropout(x)
         x = self.linear(x)
         return x
-    
+
+
 class TransformerForSequenceClassification(nn.Module):
     """Transformer model with a classification head on top for sequence classification.
 
@@ -342,9 +363,17 @@ class TransformerForSequenceClassification(nn.Module):
         classifier (ClassificationHead): The classification head on top of the Transformer encoder.
     """
 
-    def __init__(self, vocab_size: int, max_position_embeddings: int, d_model: int,
-                num_attention_heads: int, intermediate_size: int, num_hidden_layers: int,
-                num_classes: int, dropout_prob: float):
+    def __init__(
+        self,
+        vocab_size: int,
+        max_position_embeddings: int,
+        d_model: int,
+        num_attention_heads: int,
+        intermediate_size: int,
+        num_hidden_layers: int,
+        num_classes: int,
+        dropout_prob: float,
+    ):
         super(TransformerForSequenceClassification, self).__init__()
         self.transformer_encoder = TransformerEncoder(
             vocab_size,
@@ -355,7 +384,6 @@ class TransformerForSequenceClassification(nn.Module):
             num_hidden_layers,
         )
         self.classifier = ClassificationHead(d_model, num_classes, dropout_prob)
-
 
     def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
         """Forward pass through the Transformer model with classification head.
@@ -371,7 +399,7 @@ class TransformerForSequenceClassification(nn.Module):
 
         # Use the first token's output (e.g., CLS token) for classification
         cls_repr = hidden_states[:, 0, :]  # primer token como CLS
-        
+
         # Pass through the classification head
         logits = self.classifier(cls_repr)
         return logits
