@@ -74,6 +74,7 @@ class AttentionHead(nn.Module):
         k: torch.Tensor = self.wk(x)
         v: torch.Tensor = self.wv(x)
 
+        output: torch.Tensor
         output, _ = self.scaled_dot_product_attention(q, k, v)
 
         return output
@@ -107,7 +108,7 @@ class MultiHeadAttention(nn.Module):
         )
         self.output_linear = nn.Linear(num_attention_heads * self.d_head, d_model)
 
-    def forward(self, hidden_state):
+    def forward(self, hidden_state: torch.Tensor) -> torch.Tensor:
         """Forward pass for the multi-head attention layer.
 
         Args:
@@ -116,11 +117,11 @@ class MultiHeadAttention(nn.Module):
         Returns:
             Tensor: Output tensor of shape (batch_size, seq_len, d_model).
         """
-        head_outputs = [head(hidden_state) for head in self.heads]
+        head_outputs: list[AttentionHead] = [head(hidden_state) for head in self.heads]
 
         if self.d_model % self.num_attention_heads != 0:
             raise RuntimeError("Dim model must be divisible by num heads")
-        concat = torch.cat(head_outputs, dim=-1)  # (b, t, d_model)
+        concat: torch.Tensor = torch.cat(head_outputs, dim=-1)  # (b, t, d_model)
         return self.output_linear(concat)
 
 
@@ -155,10 +156,10 @@ class FeedForward(nn.Module):
         Returns:
             torch.Tensor: Output tensor of shape (batch_size, seq_len, d_model).
         """
-        x = self.linear_1(x)
-        x = self.gelu(x)
-        x = self.linear_2(x)
-        return x
+        x1: torch.Tensor = self.linear_1(x)
+        x2: torch.Tensor = self.gelu(x1)
+        x3: torch.Tensor = self.linear_2(x2)
+        return x3
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -197,14 +198,14 @@ class TransformerEncoderLayer(nn.Module):
             torch.Tensor: Output tensor of shape (batch_size, seq_len, d_model).
         """
         # Apply layer normalization and then apply multi-head attention
-        hidden_state = self.attention(self.layer_norm_1(x))
+        hidden_state: torch.Tensor = self.attention(self.layer_norm_1(x))
 
         # Apply layer normalization and then apply feed-forward network
-        x = x + hidden_state
+        x: torch.Tensor = x + hidden_state
 
-        hidden_state = self.feed_forward(self.layer_norm_2(x))
-        x = x + hidden_state
-        return x
+        hidden_state2: torch.Tensor = self.feed_forward(self.layer_norm_2(x))
+        x2: torch.Tensor = x + hidden_state2
+        return x2
 
 
 class Embeddings(nn.Module):
@@ -240,7 +241,10 @@ class Embeddings(nn.Module):
             torch.Tensor: The combined and normalized embeddings of shape (batch_size, seq_len, d_model).
         """
         # Generate position IDs based on the input sequence length
+        batch_size: int
+        seq_length: int
         batch_size, seq_length = input_ids.size()
+
         position_ids = (
             torch.arange(seq_length, device=input_ids.device)
             .unsqueeze(0)
@@ -304,9 +308,9 @@ class TransformerEncoder(nn.Module):
         Returns:
             torch.Tensor: Output tensor of shape (batch_size, seq_len, d_model).
         """
-        x = self.embeddings(x)
+        x: torch.Tensor = self.embeddings(x)
         for layer in self.layers:
-            x = layer(x)
+            x: torch.Tensor = layer(x)
         return x
 
 
@@ -340,9 +344,9 @@ class ClassificationHead(nn.Module):
         Returns:
             torch.Tensor: Output tensor of shape (batch_size, num_classes).
         """
-        x = self.dropout(x)
-        x = self.linear(x)
-        return x
+        x: torch.Tensor = self.dropout(x)
+        x1: torch.Tensor = self.linear(x)
+        return x1
 
 
 class TransformerForSequenceClassification(nn.Module):
@@ -395,11 +399,11 @@ class TransformerForSequenceClassification(nn.Module):
             torch.Tensor: Output tensor of shape (batch_size, num_classes).
         """
         # Get the hidden states from the Transformer encoder
-        hidden_states = self.transformer_encoder(input_ids)
+        hidden_states: torch.Tensor = self.transformer_encoder(input_ids)
 
         # Use the first token's output (e.g., CLS token) for classification
         cls_repr = hidden_states[:, 0, :]  # primer token como CLS
 
         # Pass through the classification head
-        logits = self.classifier(cls_repr)
+        logits: torch.Tensor = self.classifier(cls_repr)
         return logits
