@@ -117,7 +117,7 @@ class MultiHeadAttention(nn.Module):
         Returns:
             Tensor: Output tensor of shape (batch_size, seq_len, d_model).
         """
-        head_outputs: list[AttentionHead] = [head(hidden_state) for head in self.heads]
+        head_outputs: list[torch.Tensor] = [head(hidden_state) for head in self.heads]
 
         if self.d_model % self.num_attention_heads != 0:
             raise RuntimeError("Dim model must be divisible by num heads")
@@ -201,10 +201,10 @@ class TransformerEncoderLayer(nn.Module):
         hidden_state: torch.Tensor = self.attention(self.layer_norm_1(x))
 
         # Apply layer normalization and then apply feed-forward network
-        x: torch.Tensor = x + hidden_state
+        x1: torch.Tensor = x + hidden_state
 
-        hidden_state2: torch.Tensor = self.feed_forward(self.layer_norm_2(x))
-        x2: torch.Tensor = x + hidden_state2
+        hidden_state2: torch.Tensor = self.feed_forward(self.layer_norm_2(x1))
+        x2: torch.Tensor = x1 + hidden_state2
         return x2
 
 
@@ -344,9 +344,9 @@ class ClassificationHead(nn.Module):
         Returns:
             torch.Tensor: Output tensor of shape (batch_size, num_classes).
         """
-        x: torch.Tensor = self.dropout(x)
-        x1: torch.Tensor = self.linear(x)
-        return x1
+        x1: torch.Tensor = self.dropout(x)
+        x2: torch.Tensor = self.linear(x1)
+        return x2
 
 
 class TransformerForSequenceClassification(nn.Module):
