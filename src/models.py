@@ -25,9 +25,9 @@ class AttentionHead(nn.Module):
     def __init__(self, d_model: int, d_k: int, d_q: int, d_v: int):
         super(AttentionHead, self).__init__()
 
-        self.wq = None
-        self.wk = None
-        self.wv = None
+        self.wq = nn.Linear(d_model, d_q)
+        self.wk = nn.Linear(d_model, d_k)
+        self.wv = nn.Linear(d_model, d_v)
 
     def scaled_dot_product_attention(self, q, k, v):
         """Calculate the attention weights.
@@ -43,18 +43,18 @@ class AttentionHead(nn.Module):
         """
 
         # The dimension of the key tensor, used to scale the scores.
-        dim_k = None
+        dim_k = self.wk.out_features
 
         # Calculate the dot product between query and the transpose of key.
         # The result is then scaled by the square root of dim_k.
-        scores = None
+        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(dim_k)
 
         # Apply the softmax function to obtain the attention weights.
-        weights = None
+        weights = F.softmax(scores, dim=1)
 
         # Compute the output by performing a weighted sum of the value tensor
         # using the attention weights.
-        output = None
+        output = torch.matmul(weights, v)
 
         return output, weights
 
@@ -68,11 +68,11 @@ class AttentionHead(nn.Module):
             Tensor: Output tensor of shape (batch_size, seq_len, d_v).
         """
         # Obtain the corresponding query, key, and value vectors of the input tensor.
-        q = None
-        k = None
-        v = None
+        q: torch.Tensor = self.wq(x)
+        k: torch.Tensor = self.wk(x)
+        v: torch.Tensor = self.wq(x)
 
-        output, _ = None
+        output, _ = self.scaled_dot_product_attention(q, k, v)
 
         return output
 
@@ -126,8 +126,8 @@ class FeedForward(nn.Module):
 
     def __init__(self, d_model: int, intermediate_size: int):
         super(FeedForward, self).__init__()
-        self.linear_1 = None
-        self.linear_2 = None
+        self.linear_1 = nn.Linear(d_model, intermediate_size)
+        self.linear_2 = nn.Linear(intermediate_size, d_model)
         self.gelu = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
